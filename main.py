@@ -50,21 +50,15 @@ async def generate_cover_letter(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-prompt = f"""Based on the following resume, write a professional cover letter for the position '{job_position}' at '{company_name or "a company"}'. Resume:
+    prompt = f"""Based on the following resume, write a professional cover letter for the position '{job_position}' at '{company_name or "a company"}'. Resume:
 {resume['parsed_text']}"""
 
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that writes great cover letters."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,
-        )
-        ai_output = response["choices"][0]["message"]["content"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    openai_response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    generated_text = openai_response.choices[0].message.content
 
     letter_id = str(uuid4())
     cover_letters[letter_id] = {
@@ -73,11 +67,11 @@ prompt = f"""Based on the following resume, write a professional cover letter fo
         "resume_id": resume_id,
         "job_position": job_position,
         "company_name": company_name,
-        "generated_text": ai_output,
-        "created_at": datetime.now().isoformat()
+        "generated_text": generated_text,
+        "created_at": str(datetime.now())
     }
 
     return {
         "cover_letter_id": letter_id,
-        "generated_text": ai_output
+        "generated_text": generated_text
     }
