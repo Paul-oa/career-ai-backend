@@ -2,6 +2,12 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from uuid import uuid4
 from datetime import datetime
 from typing import Optional
+import openai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
@@ -44,8 +50,21 @@ async def generate_cover_letter(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    prompt = f"Generate a cover letter for position '{job_position}' at '{company_name or 'a company'}' based on resume: {resume['parsed_text']}"
-    ai_output = f"Generated cover letter for {job_position} at {company_name or 'a company'}"
+    prompt = f"Based on the following resume, write a professional cover letter for the position '{job_position}' at '{company_name or 'a company'}'. Resume:
+{resume['parsed_text']}"
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that writes great cover letters."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=500,
+        )
+        ai_output = response["choices"][0]["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     letter_id = str(uuid4())
     cover_letters[letter_id] = {
