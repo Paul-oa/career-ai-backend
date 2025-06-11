@@ -50,8 +50,8 @@ async def generate_cover_letter(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    prompt = f"Based on the following resume, write a professional cover letter for the position '{job_position}' at '{company_name or 'a company'}'. Resume:
-{resume['parsed_text']}"
+   prompt = f"""Based on the following resume, write a professional cover letter for the position '{job_position}' at '{company_name or "a company"}'. Resume:
+{resume['parsed_text']}"""
 
     try:
         response = openai.ChatCompletion.create(
